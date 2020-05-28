@@ -1,4 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:term_project/dbhelper.dart';
+
+import 'model/fish.dart';
 
 class EditPage extends StatefulWidget {
 
@@ -17,16 +23,75 @@ class _EditPageState extends State<EditPage> {
   
   String _selectedFish;
   double _stockValue = 1;
+
+  File _imageFile;
+
+  final descTextController = TextEditingController();
+
+  Future _getImage(ImageSource src) async {
+
+    var image = await ImagePicker.pickImage(source: src);
+
+    setState(() {
+      _imageFile = image;
+    });
+  }
   
   Widget _stackImage() {
 
     double _btnImgSize = 35.0;
 
+    double screenWidth = MediaQuery.of(context).size.width;
+
+    String _fishImage = "images/";
+
+    switch(_selectedFish) {
+      case "Catfish":
+      _fishImage += "catfish";
+      break;
+      case "Characin":
+      _fishImage += "characin";
+      break;
+      case "Cichlid":
+      _fishImage += "cichlid";
+      break;
+      case "Goldfish":
+      _fishImage += "gold";
+      break;
+      case "Golden Loach":
+      _fishImage += "loach";
+      break;
+      case "Bluefin Killifish":
+      _fishImage += "killi";
+      break;
+      case "Paradise Fish":
+      _fishImage += "paradise";
+      break;
+      case "Orangeback Rainbowfish":
+      _fishImage += "rainbow";
+      break;
+      case "Koifish":
+      _fishImage += "koi";
+      break;
+      default:
+      _fishImage += "fish_template";
+      break;
+    }
+
+    _fishImage += ".jpg";
+
     return Stack(
+      
       children: <Widget>[
-        Image(
-          image: AssetImage('images/fish_template.jpg'),
-        ),
+        
+        _imageFile == null ?
+            Image(
+              image: AssetImage(_fishImage),
+              fit: BoxFit.fitWidth,
+              width: screenWidth,
+              height: 250,
+            ) :
+            Image.file(_imageFile, fit: BoxFit.fitWidth, width: screenWidth, height: 250),
         Positioned(
           right: 0,
           bottom: 0,
@@ -45,7 +110,7 @@ class _EditPageState extends State<EditPage> {
             shape: CircleBorder(),
             fillColor: Colors.blue,
             onPressed: () {
-
+              _getImage(ImageSource.gallery);
             },
           ),
           RawMaterialButton(
@@ -61,7 +126,7 @@ class _EditPageState extends State<EditPage> {
             shape: CircleBorder(),
             fillColor: Colors.blue,
             onPressed: () {
-
+              _getImage(ImageSource.camera);
             },
           ),
             ],
@@ -84,6 +149,7 @@ class _EditPageState extends State<EditPage> {
           'Paradise Fish',
           'Orangeback Rainbowfish',
           'Koifish',
+          'Other',
       ];
       return Container(
         
@@ -146,13 +212,14 @@ class _EditPageState extends State<EditPage> {
 
   Widget _txtDescription() {
     return TextField(
-                keyboardType: TextInputType.multiline,
-                maxLines: null,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Description',
-                ),
-              );
+      controller: descTextController,
+      keyboardType: TextInputType.multiline,
+      maxLines: null,
+      decoration: InputDecoration(
+        border: OutlineInputBorder(),
+        labelText: 'Description',
+      ),
+    );
   }
 
 
@@ -165,7 +232,12 @@ class _EditPageState extends State<EditPage> {
             child: IconButton(
               icon: Icon(Icons.done),
               onPressed: () {
-                Navigator.pop(scaffoldKey.currentContext);
+                if (_selectedFish == null) {
+                  _showSnacBar("Please choose fish type");
+                } else {
+                  _insertToDatabase();
+                }
+                //Navigator.pop(scaffoldKey.currentContext);
               },
             ),
           ),
@@ -209,6 +281,20 @@ class _EditPageState extends State<EditPage> {
     );
   }
 
+  Future<void> _insertToDatabase() async {
+    String imgPath = "";
+    if (_imageFile != null) {
+      imgPath = _imageFile.path;
+    }
+    Fish fish = Fish(title: _selectedFish, stock: _stockValue.toInt(), description: descTextController.text, img: imgPath);
+    
+    int rows = await DBHelper.instance.insert(fish);
+
+    _showSnacBar(rows != 0 ? "Fish inserted" : "Fish could not be inserted");
+
+    Navigator.pop(context);
+    
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -248,4 +334,9 @@ class _EditPageState extends State<EditPage> {
     );
   }
   
+  @override
+  void dispose() {
+    descTextController.dispose();
+    super.dispose();
+  }
 }

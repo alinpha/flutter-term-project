@@ -67,10 +67,10 @@ class DBHelper {
     return await db.query(TABLE_NAME, where: "$TITLE like '%$title%'");
   }
 
-  Future<int> update(Fish fish) async {
-    Database db = await instance.db;
-    return await db.update(TABLE_NAME, fish.toMap(), where: '$ID=${fish.id}');
-  }
+  // Future<int> update(Fish fish) async {
+  //   Database db = await instance.db;
+  //   return await db.update(TABLE_NAME, fish.toMap(), where: '$ID=${fish.id}');
+  // }
 
   Future<int> delete(int id) async {
     Database db = await instance.db;

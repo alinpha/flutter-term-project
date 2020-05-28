@@ -6,6 +6,9 @@ A Flutter project for Spring 2020 term NBCC.
 
 This project is a Flutter mobile app that provide a management system for an aquarium.
 
+Business rule:
+User will not be able to add fish without selectin fish type.
+
 A few resources to get you started if this is your first Flutter project:
 
 - [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)

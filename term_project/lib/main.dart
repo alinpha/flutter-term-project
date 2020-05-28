@@ -1,52 +1,57 @@
+import 'dart:io';
+import 'dart:ui';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:page_view_indicators/circle_page_indicator.dart';
+import 'package:term_project/dbhelper.dart';
 import './edit.dart';
 import 'model/fish.dart';
 
-void main() => runApp(MyApp());
+void main() => runApp(MaterialApp(
+  debugShowCheckedModeBanner: false,
+  home: MyApp(),
+));
 
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Flutaquarium',
-      theme: ThemeData(
-        
-      ),
-      home: HomePage(),
-    );
-  }
+class MyApp extends StatefulWidget {
+  _HomePage createState() => _HomePage();
+  
 }
 
-class HomePage extends StatelessWidget {
+class _HomePage extends State<MyApp> {
 
   final _pageController = PageController(initialPage: 0);
   final _currentPageNotifier = ValueNotifier<int>(0);
+
 
   @override
   Widget build(BuildContext context) {
 
     List<Fish> fishList = List<Fish>();
 
-    fishList.add(
-      Fish(
-        id: 1, 
-        title: 'goldfish', 
-        stock: 5, 
-        description: 'lorem iprum dolor',
-        img: 'gold')
-    );
+    void _loadFish() async {
+      final List<Map<String, dynamic>> maps = await DBHelper.instance.queryAll();
+      fishList.clear();
+      maps.forEach((map) => fishList.add(Fish.fromMap(map)));
+    }
 
-    fishList.add(
-      Fish(
-        id: 2, 
-        title: 'killifish', 
-        stock: 2, 
-        description: 'this is a description',
-        img: 'loach')
-    );
+    // fishList.add(
+    //   Fish(
+    //     id: 1, 
+    //     title: 'goldfish', 
+    //     stock: 5, 
+    //     description: 'lorem iprum dolor',
+    //     img: 'gold')
+    // );
+
+    // fishList.add(
+    //   Fish(
+    //     id: 2, 
+    //     title: 'killifish', 
+    //     stock: 2, 
+    //     description: 'this is a description',
+    //     img: 'loach')
+    // );
 
     Widget _title(String title) {
       return Container(
@@ -77,13 +82,59 @@ class HomePage extends StatelessWidget {
       );
     }
 
-    Widget _image(String img) {
-      return Image.asset(
-                'images/$img.jpg',
+    Widget _image(Fish fish) {
+      
+      
+
+      if (fish.img == "") {
+
+        String _fishImage = "";
+
+        switch (fish.title) {
+          case "Catfish":
+          _fishImage += "catfish";
+          break;
+          case "Characin":
+          _fishImage += "characin";
+          break;
+          case "Cichlid":
+          _fishImage += "cichlid";
+          break;
+          case "Goldfish":
+          _fishImage += "gold";
+          break;
+          case "Golden Loach":
+          _fishImage += "loach";
+          break;
+          case "Bluefin Killifish":
+          _fishImage += "killi";
+          break;
+          case "Paradise Fish":
+          _fishImage += "paradise";
+          break;
+          case "Orangeback Rainbowfish":
+          _fishImage += "rainbow";
+          break;
+          case "Koifish":
+          _fishImage += "koi";
+          break;
+          default:
+          _fishImage += "fish_template";
+          break;
+        }
+
+        _fishImage += ".jpg";
+
+        return Image.asset(
+                _fishImage,
                 width: 600,
                 height: 240,
                 fit: BoxFit.fill,
               );
+      }
+
+      return Image.file(File(fish.img));
+      
     }
 
     Widget _fishContainer(Fish fish) {
@@ -98,7 +149,7 @@ class HomePage extends StatelessWidget {
         ),
           child: Column(
             children: <Widget>[
-              _image(fish.img),
+              _image(fish),
               _title(fish.title),
               _stock(fish.stock),
               _description(fish.description),
@@ -144,19 +195,37 @@ class HomePage extends StatelessWidget {
       ],
     );
 
+    Widget _noFish = Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.blue, Colors.white],
+        ),
+      ),
+      child: Center(
+        child: Text('Tap + to add fish'),
+      ),
+    );
+
     return Scaffold (
       
       appBar: AppBar(
           title: Text('Flutaquarium'),
         ),
-        body: mStack,
+        body: fishList.length > 0 ? mStack : _noFish,
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => EditPage(mTitle: 'Add New Fish',)));
+            Navigator.push(context, MaterialPageRoute(builder: (context) => EditPage(mTitle: 'Add New Fish')))
+            .then((value) {
+              setState(() {
+                _loadFish();
+              });
+            });
           },
           child: Icon(Icons.add),
         ),
-    );
+      );
   }
 }
 
