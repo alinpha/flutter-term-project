@@ -8,12 +8,12 @@ import 'model/fish.dart';
 
 class EditPage extends StatefulWidget {
 
-  final String mTitle;
+  final Fish mFish;
 
-  EditPage({@required this.mTitle});
+  EditPage({@required this.mFish});
 
   @override
-  _EditPageState createState() => _EditPageState();
+  _EditPageState createState() => _EditPageState(mFish);
   
 }
 
@@ -23,10 +23,18 @@ class _EditPageState extends State<EditPage> {
   
   String _selectedFish;
   double _stockValue = 1;
-
   File _imageFile;
+  TextEditingController _descTextController = TextEditingController();
 
-  final descTextController = TextEditingController();
+  _EditPageState(Fish mFish) {
+    _stockValue = mFish == null ? 1 : mFish.stock.toDouble();
+    if (mFish != null) {
+      _selectedFish = mFish.title;
+      if (!mFish.img.contains('images/')) {
+        _imageFile = File(mFish.img);
+      }
+    }
+  }
 
   Future _getImage(ImageSource src) async {
 
@@ -37,12 +45,7 @@ class _EditPageState extends State<EditPage> {
     });
   }
   
-  Widget _stackImage() {
-
-    double _btnImgSize = 35.0;
-
-    double screenWidth = MediaQuery.of(context).size.width;
-
+  String _fishImgFileName(String selectedFish) {
     String _fishImage = "images/";
 
     switch(_selectedFish) {
@@ -80,18 +83,34 @@ class _EditPageState extends State<EditPage> {
 
     _fishImage += ".jpg";
 
-    return Stack(
-      
-      children: <Widget>[
-        
-        _imageFile == null ?
+    return _fishImage;
+  }
+
+  Image _getImageWidget() {
+
+    double screenWidth = MediaQuery.of(context).size.width;
+
+    String _fishImage = _fishImgFileName(_selectedFish);
+
+      return _imageFile == null ?
             Image(
               image: AssetImage(_fishImage),
               fit: BoxFit.fitWidth,
               width: screenWidth,
               height: 250,
             ) :
-            Image.file(_imageFile, fit: BoxFit.fitWidth, width: screenWidth, height: 250),
+            Image.file(_imageFile, fit: BoxFit.fitWidth, width: screenWidth, height: 250);
+  }
+
+  Widget _stackImage() {
+
+    double _btnImgSize = 35.0;
+
+    return Stack(
+      
+      children: <Widget>[
+        
+        _getImageWidget(),
         Positioned(
           right: 0,
           bottom: 0,
@@ -138,8 +157,7 @@ class _EditPageState extends State<EditPage> {
 
   Widget _dropDownFishType() {
 
-      
-    List _fishList = [
+    List<String> _fishList = [
           'Catfish',
           'Characin',
           'Cichlid',
@@ -151,6 +169,7 @@ class _EditPageState extends State<EditPage> {
           'Koifish',
           'Other',
       ];
+
       return Container(
         
         padding: EdgeInsets.symmetric(horizontal: 10),
@@ -182,6 +201,8 @@ class _EditPageState extends State<EditPage> {
 
   Widget _sliderStock() {
 
+    
+
     return Slider(
               
               min: 1,
@@ -196,6 +217,7 @@ class _EditPageState extends State<EditPage> {
   }
 
   Widget _rowStock() {
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Row(
@@ -211,8 +233,10 @@ class _EditPageState extends State<EditPage> {
   }
 
   Widget _txtDescription() {
+
+
     return TextField(
-      controller: descTextController,
+      controller: _descTextController,
       keyboardType: TextInputType.multiline,
       maxLines: null,
       decoration: InputDecoration(
@@ -224,7 +248,7 @@ class _EditPageState extends State<EditPage> {
 
 
   List<Widget> _appBarAction() {
-    if (widget.mTitle.contains('Add')) {
+    if (widget.mFish == null) {
       return <Widget>[
           
           Padding(
@@ -233,11 +257,10 @@ class _EditPageState extends State<EditPage> {
               icon: Icon(Icons.done),
               onPressed: () {
                 if (_selectedFish == null) {
-                  _showSnacBar("Please choose fish type");
+                  _showSnacBar1("Please choose fish type");
                 } else {
                   _insertToDatabase();
                 }
-                //Navigator.pop(scaffoldKey.currentContext);
               },
             ),
           ),
@@ -245,7 +268,7 @@ class _EditPageState extends State<EditPage> {
     } else {
       return <Widget>[
           Padding(
-            padding: EdgeInsets.only(right: 10.0),
+            padding: EdgeInsets.only(right: 20.0),
             child: GestureDetector(
               onTap: () {
 
@@ -257,10 +280,10 @@ class _EditPageState extends State<EditPage> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.only(right: 10.0),
+            padding: EdgeInsets.only(right: 15.0),
             child: GestureDetector(
               onTap: () {
-
+                _updateDatabase();
               },
               child: Icon(
                 Icons.save,
@@ -272,7 +295,7 @@ class _EditPageState extends State<EditPage> {
     }
   }
 
-  void _showSnacBar(String mssg) {
+  void _showSnacBar1(String mssg) {
     scaffoldKey.currentState.showSnackBar(
       SnackBar(
         content: Text(mssg),
@@ -285,14 +308,53 @@ class _EditPageState extends State<EditPage> {
     String imgPath = "";
     if (_imageFile != null) {
       imgPath = _imageFile.path;
+    } else {
+      imgPath = _fishImgFileName(_selectedFish);
     }
-    Fish fish = Fish(title: _selectedFish, stock: _stockValue.toInt(), description: descTextController.text, img: imgPath);
+    Fish fish = Fish(title: _selectedFish, stock: _stockValue.toInt(), description: _descTextController.text, img: imgPath);
     
     int rows = await DBHelper.instance.insert(fish);
 
-    _showSnacBar(rows != 0 ? "Fish inserted" : "Fish could not be inserted");
+    Navigator.pop(context, fish);
+    
+  }
 
-    Navigator.pop(context);
+  Future<void> _deleteFromDatabase() async {
+    String imgPath = "";
+    if (_imageFile != null) {
+      imgPath = _imageFile.path;
+    } else {
+      imgPath = _fishImgFileName(_selectedFish);
+    }
+    Fish fish = Fish(title: _selectedFish, stock: _stockValue.toInt(), description: _descTextController.text, img: imgPath);
+    
+    int rows = await DBHelper.instance.insert(fish);
+
+    Navigator.pop(context, fish);
+    
+  }
+
+  Future<void> _updateDatabase() async {
+
+    String imgPath = "";
+    if (_imageFile != null) {
+      imgPath = _imageFile.path;
+    } else {
+      imgPath = _fishImgFileName(_selectedFish);
+    }
+
+    widget.mFish.title = _selectedFish;
+    widget.mFish.stock = _stockValue.toInt();
+    widget.mFish.description = _descTextController.text;
+    widget.mFish.img = imgPath;
+
+    //Fish fish = Fish(title: _selectedFish, stock: _stockValue.toInt(), description: _descTextController.text, img: imgPath);
+    
+    //int rows = await DBHelper.instance.update(widget.mFish);
+
+    //_showSnacBar(rows != 0 ? "Fish inserted" : "Fish could not be inserted");
+
+    Navigator.pop(context, widget.mFish);
     
   }
 
@@ -302,7 +364,7 @@ class _EditPageState extends State<EditPage> {
     return Scaffold(
       key: scaffoldKey,
       appBar: AppBar(
-        title: Text(widget.mTitle),
+        title: Text(widget.mFish == null ? 'Add Fish' : 'Edit Fish'),
         actions: _appBarAction(),
       ),
       body: Container(
@@ -336,7 +398,7 @@ class _EditPageState extends State<EditPage> {
   
   @override
   void dispose() {
-    descTextController.dispose();
+    _descTextController.dispose();
     super.dispose();
   }
 }

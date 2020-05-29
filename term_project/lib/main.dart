@@ -8,10 +8,19 @@ import 'package:term_project/dbhelper.dart';
 import './edit.dart';
 import 'model/fish.dart';
 
-void main() => runApp(MaterialApp(
-  debugShowCheckedModeBanner: false,
-  home: MyApp(),
-));
+// void main() => runApp(MaterialApp(
+//   debugShowCheckedModeBanner: false,
+//   home: MyApp(),
+// ));
+
+void main() {
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: MyApp(),
+    ),
+  );
+}
 
 class MyApp extends StatefulWidget {
   _HomePage createState() => _HomePage();
@@ -20,38 +29,29 @@ class MyApp extends StatefulWidget {
 
 class _HomePage extends State<MyApp> {
 
+    final GlobalKey<ScaffoldState> scaffoldKey = new GlobalKey<ScaffoldState>();
+
   final _pageController = PageController(initialPage: 0);
   final _currentPageNotifier = ValueNotifier<int>(0);
+
+  List<Fish> fishList = List<Fish>();
+
+    Future<void> _loadFish() async {
+      print('load fish');
+      final List<Map<String, dynamic>> maps = await DBHelper.instance.queryAll();
+      fishList.clear();
+     maps.forEach((map) => fishList.add(Fish.fromMap(map)));
+      //print(fishList[0].img);
+      setState(() {});
+    }
+
+    
 
 
   @override
   Widget build(BuildContext context) {
 
-    List<Fish> fishList = List<Fish>();
-
-    void _loadFish() async {
-      final List<Map<String, dynamic>> maps = await DBHelper.instance.queryAll();
-      fishList.clear();
-      maps.forEach((map) => fishList.add(Fish.fromMap(map)));
-    }
-
-    // fishList.add(
-    //   Fish(
-    //     id: 1, 
-    //     title: 'goldfish', 
-    //     stock: 5, 
-    //     description: 'lorem iprum dolor',
-    //     img: 'gold')
-    // );
-
-    // fishList.add(
-    //   Fish(
-    //     id: 2, 
-    //     title: 'killifish', 
-    //     stock: 2, 
-    //     description: 'this is a description',
-    //     img: 'loach')
-    // );
+    _loadFish();
 
     Widget _title(String title) {
       return Container(
@@ -83,57 +83,20 @@ class _HomePage extends State<MyApp> {
     }
 
     Widget _image(Fish fish) {
+
+      //print(fish.img);
       
-      
-
-      if (fish.img == "") {
-
-        String _fishImage = "";
-
-        switch (fish.title) {
-          case "Catfish":
-          _fishImage += "catfish";
-          break;
-          case "Characin":
-          _fishImage += "characin";
-          break;
-          case "Cichlid":
-          _fishImage += "cichlid";
-          break;
-          case "Goldfish":
-          _fishImage += "gold";
-          break;
-          case "Golden Loach":
-          _fishImage += "loach";
-          break;
-          case "Bluefin Killifish":
-          _fishImage += "killi";
-          break;
-          case "Paradise Fish":
-          _fishImage += "paradise";
-          break;
-          case "Orangeback Rainbowfish":
-          _fishImage += "rainbow";
-          break;
-          case "Koifish":
-          _fishImage += "koi";
-          break;
-          default:
-          _fishImage += "fish_template";
-          break;
-        }
-
-        _fishImage += ".jpg";
+      if (fish.img.contains('images/')) {
 
         return Image.asset(
-                _fishImage,
-                width: 600,
-                height: 240,
-                fit: BoxFit.fill,
+                fish.img,
+                width: MediaQuery.of(context).size.width,
+                height: 250,
+                fit: BoxFit.fitWidth,
               );
       }
 
-      return Image.file(File(fish.img));
+      return Image.file(File(fish.img), width: MediaQuery.of(context).size.width, height: 250, fit: BoxFit.fitWidth,);
       
     }
 
@@ -208,24 +171,86 @@ class _HomePage extends State<MyApp> {
       ),
     );
 
+    List<Widget> _appBarActions() {
+      if (fishList.length > 0) {
+        return <Widget>[
+            Padding(
+            padding: EdgeInsets.only(right: 10.0),
+            child: IconButton(
+              icon: Icon(Icons.edit),
+              onPressed: () {
+                _awaitReturnFromEditPage(context, fishList[_pageController.page.toInt()]);
+              },
+            ),
+          )
+        ];
+      } else {
+        return [];
+      }
+    }
+
+    Scaffold _scaffold() {
     return Scaffold (
-      
+      key: scaffoldKey,
       appBar: AppBar(
           title: Text('Flutaquarium'),
+          actions: _appBarActions(),
         ),
         body: fishList.length > 0 ? mStack : _noFish,
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => EditPage(mTitle: 'Add New Fish')))
-            .then((value) {
-              setState(() {
-                _loadFish();
-              });
-            });
+            _awaitReturnFromEditPage(context, null);
           },
           child: Icon(Icons.add),
         ),
       );
+  }
+
+
+    return _scaffold();
+  }
+
+  void _showSnacBar(String mssg) {
+    scaffoldKey.currentState.showSnackBar(
+      SnackBar(
+        content: Text(mssg),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  
+
+  void _awaitReturnFromEditPage(BuildContext ctx, Fish fish) async {
+    final result = await Navigator.push(context, MaterialPageRoute(
+              builder: (context) => EditPage(mFish: fish),
+            ));
+    if (result != null) {
+
+      if (fish != null) {//update made
+
+        setState(() {
+          fishList[_pageController.page.toInt()] = result;
+          //_showSnacBar('Fish updated');
+        });
+
+      } else {//ne wfish added
+        setState(() {
+          fishList.add(result);
+          _showSnacBar('Fish added');
+          print(result);
+        });
+      }
+
+    } else {
+      if (fish != null) {//fish deleted
+        setState(() {
+          fishList.removeAt(_pageController.page.toInt());
+         // _showSnacBar('Fish deleted');
+        });
+        
+      }
+    }
   }
 }
 
