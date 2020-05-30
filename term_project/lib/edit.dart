@@ -271,7 +271,7 @@ class _EditPageState extends State<EditPage> {
             padding: EdgeInsets.only(right: 20.0),
             child: GestureDetector(
               onTap: () {
-
+                _askToDelete(scaffoldKey.currentContext);
               },
               child: Icon(
                 Icons.delete,
@@ -295,6 +295,41 @@ class _EditPageState extends State<EditPage> {
     }
   }
 
+  void _askToDelete(BuildContext ctx) {
+    
+  Widget cancelButton = FlatButton(
+    child: Text("Cancel"),
+    onPressed:  () {
+      Navigator.of(ctx).pop();
+    },
+  );
+  Widget continueButton = FlatButton(
+    child: Text("Delete"),
+    onPressed:  () {
+      Navigator.of(ctx).pop();
+      _deleteFromDatabase();
+    },
+  );
+
+  
+  AlertDialog alert = AlertDialog(
+    title: Text("Delete Fish"),
+    content: Text("Would you like to delete this fish?"),
+    actions: [
+      cancelButton,
+      continueButton,
+    ],
+  );
+
+  
+  showDialog(
+    context: ctx,
+    builder: (BuildContext context) {
+      return alert;
+    },
+  );
+  }
+
   void _showSnacBar1(String mssg) {
     scaffoldKey.currentState.showSnackBar(
       SnackBar(
@@ -315,22 +350,19 @@ class _EditPageState extends State<EditPage> {
     
     int rows = await DBHelper.instance.insert(fish);
 
+    //int id = await DBHelper.instance.getLastId();
+
+    //fish.id = id;
+
     Navigator.pop(context, fish);
     
   }
 
   Future<void> _deleteFromDatabase() async {
-    String imgPath = "";
-    if (_imageFile != null) {
-      imgPath = _imageFile.path;
-    } else {
-      imgPath = _fishImgFileName(_selectedFish);
-    }
-    Fish fish = Fish(title: _selectedFish, stock: _stockValue.toInt(), description: _descTextController.text, img: imgPath);
     
-    int rows = await DBHelper.instance.insert(fish);
+    await DBHelper.instance.delete(widget.mFish.id);
 
-    Navigator.pop(context, fish);
+    Navigator.pop(context);
     
   }
 
@@ -350,7 +382,7 @@ class _EditPageState extends State<EditPage> {
 
     //Fish fish = Fish(title: _selectedFish, stock: _stockValue.toInt(), description: _descTextController.text, img: imgPath);
     
-    //int rows = await DBHelper.instance.update(widget.mFish);
+    int rows = await DBHelper.instance.update(widget.mFish);
 
     //_showSnacBar(rows != 0 ? "Fish inserted" : "Fish could not be inserted");
 

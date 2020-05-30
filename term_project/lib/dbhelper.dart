@@ -67,14 +67,21 @@ class DBHelper {
   //   return await db.query(TABLE_NAME, where: "$TITLE like '%$title%'");
   // }
 
-  // Future<int> update(Fish fish) async {
+  // Future<int> getLastId() async {
   //   Database db = await instance.db;
-  //   String id = '';
-  //   return await db.update(TABLE_NAME, fish.toMap(), where: '$ID=${id}');
+  //   List<Map<String, dynamic>> map = await db.query(TABLE_NAME, orderBy: 'id DESC', limit: 1);
+  //   Fish fish = Fish.fromMap(map[0]);
+  //   return fish.id;
   // }
 
-  // Future<int> delete(int id) async {
-  //   Database db = await instance.db;
-  //   return await db.delete(TABLE_NAME, where: '$ID=$id');    
-  // }
+  Future<int> update(Fish fish) async {
+    Database db = await instance.db;
+    //String id = '';
+    return await db.update(TABLE_NAME, fish.toMap(), where: '$ID=${fish.id}');
+  }
+
+  Future<int> delete(int id) async {
+    Database db = await instance.db;
+    return await db.delete(TABLE_NAME, where: '$ID=$id');    
+  }
 }
