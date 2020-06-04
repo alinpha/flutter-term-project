@@ -227,28 +227,24 @@ class _HomePage extends State<MyApp> {
             ));
     if (result != null) {
 
-      if (fish != null) {//update made
+      if (result == "update") {//update made
 
         setState(() {
-          //fishList[_pageController.page.toInt()] = result;
           _showSnacBar('Fish updated');
         });
 
-      } else {//new fish added
+      } else if (result == "insert") {//new fish added
         setState(() {
           
           _showSnacBar('Fish added');
         });
-      }
-
-    } else {
-      if (fish != null) {//fish deleted
+      } else {
         setState(() {
-          //fishList.removeAt(_pageController.page.toInt());
+          
           _showSnacBar('Fish deleted');
         });
-        
       }
+
     }
   }
 }

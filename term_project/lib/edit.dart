@@ -354,7 +354,7 @@ class _EditPageState extends State<EditPage> {
 
     //fish.id = id;
 
-    Navigator.pop(context, fish);
+    Navigator.pop(context, "insert");
     
   }
 
@@ -362,7 +362,7 @@ class _EditPageState extends State<EditPage> {
     
     await DBHelper.instance.delete(widget.mFish.id);
 
-    Navigator.pop(context);
+    Navigator.pop(context, "delete");
     
   }
 
@@ -386,7 +386,7 @@ class _EditPageState extends State<EditPage> {
 
     //_showSnacBar(rows != 0 ? "Fish inserted" : "Fish could not be inserted");
 
-    Navigator.pop(context, widget.mFish);
+    Navigator.pop(context, "update");
     
   }
 
